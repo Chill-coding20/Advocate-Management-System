@@ -1,0 +1,19 @@
+package advocate.com.advocate_app.websocket.event;
+
+public enum EventType {
+    CLIENT_CREATED,
+    CLIENT_UPDATED,
+    CASE_CREATED,
+    CASE_UPDATED,
+    CASE_CLOSED,
+    EXPENSE_CREATED,
+    EXPENSE_UPDATED,
+    HEARING_CREATED,
+    HEARING_UPDATED,
+    INVOICE_CREATED,
+    PAYMENT_RECEIVED,
+    DOCUMENT_UPLOADED,
+    EMAIL_SENT,
+    WHATSAPP_SENT,
+    NOTIFICATION_CREATED
+}
