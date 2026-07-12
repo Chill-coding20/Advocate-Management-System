@@ -1,0 +1,43 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# IDE / project config
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings
+.factorypath
+.springBeans
+.sts4-cache
+HELP.md
+
+# Build output
+target/
+*.log
+*.trace
+
+# Environment / secrets (must be injected at runtime)
+.env
+.env.example
+.env.local
+.env.*.local
+
+# Docker files (not needed inside build)
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Local tooling
+run-backend-dev.bat
+run-backend-dev.sh

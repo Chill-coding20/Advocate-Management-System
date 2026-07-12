@@ -1,0 +1,62 @@
+# =============================================================================
+# LOCAL DEVELOPMENT ONLY — NOT for production use.
+# =============================================================================
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: advocate-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: advocate_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: advocate-backend-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Override active profile to dev for local development
+      SPRING_PROFILES_ACTIVE: dev
+      # Database (points to the db service above)
+      DB_URL: jdbc:mysql://db:3306/advocate_db?useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      DB_SHOW_SQL: "true"
+      DB_DDL_AUTO: update
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-local_dev_jwt_secret_change_me_in_prod}
+      # Mail
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      # Frontend URL for email links
+      FRONTEND_URL: http://localhost:5173
+      # CORS
+      CORS_ORIGINS: http://localhost:5173
+      # Document upload directory
+      DOCUMENT_UPLOAD_DIR: /app/uploads
+    volumes:
+      - app_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  app_uploads:
