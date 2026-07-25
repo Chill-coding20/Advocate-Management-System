@@ -16,6 +16,8 @@ import advocate.com.advocate_app.service.AuditLogService;
 import advocate.com.advocate_app.service.RbacService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,8 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/advocates")
 public class AdvocateController {
+
+    private static final Logger log = LoggerFactory.getLogger(AdvocateController.class);
 
     @Autowired
     private AdvocateService advocateService;
@@ -54,16 +58,27 @@ public class AdvocateController {
 
     @PostMapping("/signup")
     public ResponseEntity<Map<String, String>> signup(@Valid @RequestBody SignupRequestDTO signupDTO) {
+        log.info("SIGNUP REQUEST RECEIVED: email={}, barCouncilId={}", signupDTO.getEmail(), signupDTO.getBarCouncilId());
+
         Advocate advocate = advocateMapper.toEntity(signupDTO);
         if (advocate.getRole() == null || advocate.getRole().isBlank()) {
             advocate.setRole("ADVOCATE");
         }
-        advocateService.registerUser(advocate);
+        log.info("SIGNUP MAPPER DONE: role={}, experience={}", advocate.getRole(), advocate.getExperience());
+
+        try {
+            advocateService.registerUser(advocate);
+            log.info("SIGNUP USER SAVED: id={}, email={}", advocate.getId(), advocate.getEmail());
+        } catch (Exception e) {
+            log.error("SIGNUP FAILED", e);
+            throw e;
+        }
 
         // Assign default RBAC role so the user can access protected endpoints
         roleRepository.findByName("Senior Advocate").ifPresent(role ->
             rbacService.assignRoleToAdvocate(advocate.getId(), role.getId())
         );
+        log.info("SIGNUP ROLE ASSIGNED: advocateId={}", advocate.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "User registered successfully!"));
