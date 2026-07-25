@@ -5,6 +5,8 @@ import advocate.com.advocate_app.repository.AdvocateRepository;
 import advocate.com.advocate_app.service.RbacService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -13,6 +15,8 @@ import java.util.Set;
 
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtInterceptor.class);
 
     @Autowired
     private AdvocateRepository advocateRepository;
@@ -23,12 +27,14 @@ public class JwtInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            log.debug("JwtInterceptor: OPTIONS passthrough for {}", request.getRequestURI());
             return true;
         }
 
         String path = request.getRequestURI();
         if (path.contains("/api/advocates/login") || path.contains("/api/advocates/signup")
                 || path.contains("/api/auth/") || path.contains("/api/whatsapp/webhook")) {
+            log.debug("JwtInterceptor: Public path {} {} passthrough", request.getMethod(), path);
             return true;
         }
 
