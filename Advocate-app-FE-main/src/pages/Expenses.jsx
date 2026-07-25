@@ -5,6 +5,7 @@ import { useLoading } from "../contexts/LoadingContext";
 import { useToast } from "../contexts/ToastContext";
 import ReportService from "../services/ReportService";
 import { formatCurrency } from "../utils/formatCurrency";
+import { InlineLoader } from "../components/Loader";
 import "../assets/styles/Expenses.css";
 
 function Expenses() {
@@ -29,6 +30,7 @@ function Expenses() {
 
   const [searchText, setSearchText] = useState("");
   const [highlightedId, setHighlightedId] = useState(null);
+  const [pageLoading, setPageLoading] = useState(true);
   const location = useLocation();
 
   const token = localStorage.getItem("token");
@@ -104,6 +106,7 @@ function Expenses() {
   }, [cases, searchText]);
 
   const fetchCases = async () => {
+    setPageLoading(true);
     try {
       const res = await axios.get("/api/cases/my-cases", {
         headers: { Authorization: `Bearer ${token}` },
@@ -118,6 +121,8 @@ function Expenses() {
     } catch (err) {
       console.error("Error fetching cases:", err);
       setErrorMessage("Failed to fetch cases.");
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -440,6 +445,9 @@ function Expenses() {
       </div>
 
       <div className="cases-table-wrapper">
+        {pageLoading ? (
+          <InlineLoader type="table" rows={10} cols={6} />
+        ) : (
         <table className="case-list-table">
           <thead>
             <tr>
@@ -487,6 +495,7 @@ function Expenses() {
             )}
           </tbody>
         </table>
+        )}
       </div>
 
       {/* ------------------ ADD EXPENSE MODAL (small) ------------------ */}

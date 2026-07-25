@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "../assets/styles/ForgotPassword.css";
 import axios from "axios";
 import { useToast } from '../contexts/ToastContext.jsx';
+import { ButtonSpinner } from "../components/Loader";
 
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!?_+=-])[A-Za-z\d@#$%^&*!?_+=-]{8,32}$/;
 
@@ -133,6 +134,7 @@ function ResetPassword() {
 
           {pwdError && <p className="otp-error">{pwdError}</p>}
           <button type="submit" className="forgot-submit" disabled={loading || !valid || !match}>
+            {loading && <ButtonSpinner />}
             {loading ? "Resetting..." : "Reset Password"}
           </button>
         </form>

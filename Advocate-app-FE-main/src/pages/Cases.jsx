@@ -10,6 +10,7 @@ import ReportService from "../services/ReportService";
 import { formatCurrency } from "../utils/formatCurrency";
 import Pagination from "../components/Pagination";
 import usePagination from "../hooks/usePagination";
+import { InlineLoader } from "../components/Loader";
 import "../assets/styles/Cases.css";
 
 const customSelectStyles = {
@@ -89,6 +90,7 @@ function Cases() {
   const { withLoading } = useLoading();
   const { success, error, warning, info } = useToast();
   const { page, setPage, size, setSize } = usePagination({ defaultSize: 20, resetOn: [searchKeyword, showArchived] });
+  const [pageLoading, setPageLoading] = useState(true);
   const searchedFromGlobalNav = useRef(!!location.state?.search);
 
   // Document tab state
@@ -109,6 +111,7 @@ function Cases() {
 
   // ---------------- FETCH CASES ----------------
   const fetchCases = useCallback(async () => {
+    setPageLoading(true);
     try {
       const params = { page, size };
       if (searchKeyword.trim()) params.keyword = searchKeyword;
@@ -125,6 +128,8 @@ function Cases() {
       console.error("Error fetching cases:", error);
       const errData = error.response?.data;
       setErrorMessage(typeof errData === "string" ? errData : (errData?.message || "Failed to fetch cases."));
+    } finally {
+      setPageLoading(false);
     }
   }, [token, page, size, searchKeyword, showArchived]);
 
@@ -565,7 +570,9 @@ function Cases() {
 
       {/* ✅ Cases Table */}
       <div className="cases-table">
-        {cases.length === 0 ? (
+        {pageLoading ? (
+          <InlineLoader type="table" rows={size} cols={9} />
+        ) : cases.length === 0 ? (
           <p>No cases found.</p>
         ) : (
           <table>

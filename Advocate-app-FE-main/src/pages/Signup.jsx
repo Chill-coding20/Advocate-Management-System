@@ -4,6 +4,7 @@ import "../assets/styles/Signup.css";
 import axios from "axios";
 import { useLoading } from "../contexts/LoadingContext";
 import { useToast } from "../contexts/ToastContext";
+import { ButtonSpinner } from "../components/Loader";
 
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&*!?_+=-])[A-Za-z\d@#$%^&*!?_+=-]{8,32}$/;
 
@@ -19,6 +20,7 @@ function Signup() {
   const { success, error, warning, info } = useToast();
   const navigate = useNavigate();
   const [showPwd, setShowPwd] = useState(false);
+  const [buttonLoading, setButtonLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -57,6 +59,7 @@ function Signup() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setButtonLoading(true);
 
     const submitData = {
       ...formData,
@@ -81,6 +84,8 @@ function Signup() {
       } else {
         error("Signup failed! Please try again.");
       }
+    } finally {
+      setButtonLoading(false);
     }
   }
 
@@ -131,7 +136,10 @@ function Signup() {
           <input type="text" name="specialization" placeholder="Specialization (e.g., Civil, Criminal)" value={formData.specialization} onChange={handleChange} />
           <input type="number" name="experience" placeholder="Experience (Years)" value={formData.experience} onChange={handleChange} />
           <textarea name="address" placeholder="Address / Location" value={formData.address} onChange={handleChange} />
-          <button type="submit" disabled={!valid}>Sign Up</button>
+          <button type="submit" disabled={!valid || buttonLoading}>
+            {buttonLoading && <ButtonSpinner />}
+            {buttonLoading ? "Creating account..." : "Sign Up"}
+          </button>
         </form>
         <p>
           Already have an account?{" "}

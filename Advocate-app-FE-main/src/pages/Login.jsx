@@ -7,6 +7,7 @@ import { logoutAndRedirect, isTokenExpired } from '../utils/auth.jsx';
 import { useTheme } from '../contexts/ThemeContext.jsx';
 import { useLoading } from '../contexts/LoadingContext';
 import { useToast } from '../contexts/ToastContext.jsx';
+import { ButtonSpinner } from '../components/Loader';
 
 function LoginModule() {
   const { setTheme: applyTheme } = useTheme();
@@ -14,6 +15,7 @@ function LoginModule() {
   const { success, error, warning, info } = useToast();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [buttonLoading, setButtonLoading] = useState(false);
 
   // ✅ Setup global axios interceptor once
   useEffect(() => {
@@ -36,6 +38,7 @@ function LoginModule() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setButtonLoading(true);
     try {
       const response = await withLoading(
         axios.post(
@@ -61,6 +64,8 @@ function LoginModule() {
     } catch (err) {
       console.error("❌ Error during login:", err.response || err.message);
       error("Login failed! Please check your credentials or try again.");
+    } finally {
+      setButtonLoading(false);
     }
   }
 
@@ -92,7 +97,10 @@ function LoginModule() {
                 Forgot Password?
               </span>
             </div>
-            <button type="submit" className="btn btn-outline-success">Submit</button>
+            <button type="submit" className="btn btn-outline-success" disabled={buttonLoading}>
+              {buttonLoading && <ButtonSpinner />}
+              {buttonLoading ? "Logging in..." : "Submit"}
+            </button>
           </form>
         </div>
         <div className="right-box">

@@ -6,6 +6,7 @@ import { FiFolder, FiEye, FiDownload, FiX, FiUpload, FiFile } from "react-icons/
 import ReportService from "../services/ReportService";
 import Pagination from "../components/Pagination";
 import usePagination from "../hooks/usePagination";
+import { InlineLoader } from "../components/Loader";
 import "../assets/styles/Clients.css";
 
 function Clients() {
@@ -24,6 +25,7 @@ function Clients() {
   const [errorMessage, setErrorMessage] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [highlightedId, setHighlightedId] = useState(null);
+  const [pageLoading, setPageLoading] = useState(true);
   const location = useLocation();
   const token = localStorage.getItem("token");
   const { withLoading } = useLoading();
@@ -39,6 +41,7 @@ function Clients() {
 
   // ---------------- FETCH CLIENTS ----------------
   const fetchClients = useCallback(async (keyword = "") => {
+    setPageLoading(true);
     try {
       const params = { page, size };
       if (keyword.trim()) params.keyword = keyword;
@@ -56,6 +59,8 @@ function Clients() {
       console.error("Error fetching clients:", error);
       const errData = error.response?.data;
       setErrorMessage(typeof errData === "string" ? errData : (errData?.message || "Failed to fetch clients."));
+    } finally {
+      setPageLoading(false);
     }
   }, [token, page, size, showArchived]);
 
@@ -287,7 +292,9 @@ function Clients() {
       )}
 
       <div className="clients-table">
-        {clients.length === 0 ? (
+        {pageLoading ? (
+          <InlineLoader type="table" rows={size} cols={5} />
+        ) : clients.length === 0 ? (
           <p>No clients found.</p>
         ) : (
           <table>

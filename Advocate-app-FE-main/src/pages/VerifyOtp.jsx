@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../assets/styles/ForgotPassword.css";
 import axios from "axios";
+import { ButtonSpinner } from "../components/Loader";
 
 function VerifyOtp() {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ function VerifyOtp() {
           </div>
           {error && <p className="otp-error">{error}</p>}
           <button type="submit" className="forgot-submit" disabled={loading}>
+            {loading && <ButtonSpinner />}
             {loading ? "Verifying..." : "Verify Code"}
           </button>
         </form>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../assets/styles/ForgotPassword.css";
 import axios from "axios";
 import { useToast } from '../contexts/ToastContext.jsx';
+import { ButtonSpinner } from "../components/Loader";
 
 function ForgotPassword() {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ function ForgotPassword() {
             required
           />
           <button type="submit" className="forgot-submit" disabled={loading}>
+            {loading && <ButtonSpinner />}
             {loading ? "Sending..." : "Send Verification Code"}
           </button>
         </form>
