@@ -3,7 +3,8 @@ import { Client } from "@stomp/stompjs";
 
 const WebSocketContext = createContext(null);
 
-const WS_URL = "ws://localhost:8080/ws";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
+const WS_URL = API_BASE.replace(/^http/, "ws") + "/ws";
 
 export function WebSocketProvider({ children }) {
   const [status, setStatus] = useState("disconnected");
