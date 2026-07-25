@@ -13,7 +13,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Autowired
     private JwtInterceptor jwtInterceptor;
 
-    @Value("${app.cors.allowed-origins:${CORS_ORIGINS:http://localhost:5173}}")
+    @Value("${app.cors.allowed-origins:${CORS_ORIGINS:http://localhost:5173,https://*.vercel.app}}")
     private String allowedOrigins;
 
     @Override
