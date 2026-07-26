@@ -18,7 +18,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,6 +31,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentController.class);
 
     @Autowired
     private DocumentService documentService;
@@ -44,8 +51,17 @@ public class DocumentController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "description", required = false) String description) throws IOException {
         String email = JwtUtil.extractEmail(token.substring(7));
-        Document doc = documentService.uploadDocument(email, file, caseId, clientId, documentName, category, description);
-        return ResponseEntity.ok(documentMapper.toResponseDTO(doc));
+        log.info("UPLOAD DEBUG — Controller entry: email={}, file={}, caseId={}, clientId={}, documentName={}, category={}",
+                email, file != null ? file.getOriginalFilename() : "null", caseId, clientId, documentName, category);
+        try {
+            Document doc = documentService.uploadDocument(email, file, caseId, clientId, documentName, category, description);
+            log.info("UPLOAD DEBUG — Controller success: docId={}, documentName={}", doc.getId(), doc.getDocumentName());
+            return ResponseEntity.ok(documentMapper.toResponseDTO(doc));
+        } catch (RuntimeException e) {
+            log.error("UPLOAD DEBUG — RuntimeException caught in controller: type={}, message={}",
+                    e.getClass().getName(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     @GetMapping({"/list", "/search"})
@@ -103,15 +119,23 @@ public class DocumentController {
             @RequestHeader("Authorization") String token,
             @PathVariable Long id) {
         String email = JwtUtil.extractEmail(token.substring(7));
+        log.info("DOWNLOAD DEBUG — Controller entry: id={}, email={}", id, email);
         try {
             Document doc = documentService.getDocumentById(id, email);
+            log.info("DOWNLOAD DEBUG — Document lookup success: id={}, owner={}, filePath={}, fileType={}",
+                    doc.getId(), doc.getAdvocate().getEmail(), doc.getFilePath(), doc.getFileType());
             Resource resource = documentService.getDocumentResource(id, email);
+            log.info("DOWNLOAD DEBUG — Resource loaded, returning response");
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(doc.getFileType() != null ? doc.getFileType() : "application/octet-stream"))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getOriginalName() + "\"")
                     .body(resource);
         } catch (IOException e) {
+            log.error("DOWNLOAD DEBUG — IOException: type={}, message={}", e.getClass().getName(), e.getMessage(), e);
             return ResponseEntity.status(500).body("Unable to read the requested file.");
+        } catch (RuntimeException e) {
+            log.error("DOWNLOAD DEBUG — RuntimeException: type={}, message={}", e.getClass().getName(), e.getMessage(), e);
+            throw e;
         }
     }
 

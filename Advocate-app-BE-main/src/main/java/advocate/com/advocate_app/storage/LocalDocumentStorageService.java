@@ -112,24 +112,37 @@ public class LocalDocumentStorageService implements DocumentStorageService {
 
     @Override
     public Resource loadAsResource(String filePath) throws IOException {
+        log.info("DOWNLOAD DEBUG — StorageService.loadAsResource: filePath='{}', rootLocation='{}'", filePath, rootLocation);
         try {
             Path path = Paths.get(filePath);
-            if (!path.isAbsolute()) {
+            boolean isAbs = path.isAbsolute();
+            log.info("DOWNLOAD DEBUG — Path isAbsolute={}, raw={}, normalized={}", isAbs, filePath, path.normalize());
+            if (!isAbs) {
                 path = rootLocation.resolve(path).normalize();
+                log.info("DOWNLOAD DEBUG — Relative resolved to: {}", path);
             }
 
+            log.info("DOWNLOAD DEBUG — Path startsWith rootLocation: {}", path.startsWith(rootLocation));
             if (!path.startsWith(rootLocation)) {
-                log.warn("BLOCKED path traversal attempt on download: {}", filePath);
+                log.warn("DOWNLOAD DEBUG — BLOCKED path traversal: filePath={}, resolved={}, root={}", filePath, path, rootLocation);
                 throw new IOException("Access denied: file path outside storage root.");
             }
 
+            boolean fileExists = Files.exists(path);
+            boolean fileReadable = Files.isReadable(path);
+            log.info("DOWNLOAD DEBUG — Physical file check: exists={}, readable={}, resolvedPath={}", fileExists, fileReadable, path);
+
             Resource resource = new UrlResource(path.toUri());
             if (resource.exists() && resource.isReadable()) {
+                log.info("DOWNLOAD DEBUG — Resource ready: URI={}, description={}", resource.getURI(), resource.getDescription());
                 return resource;
             } else {
+                log.error("DOWNLOAD DEBUG — Resource not found/readable: exists={}, readable={}, path={}",
+                        resource.exists(), resource.isReadable(), path);
                 throw new IOException("File not found or not readable: " + filePath);
             }
         } catch (MalformedURLException e) {
+            log.error("DOWNLOAD DEBUG — MalformedURLException: filePath={}, message={}", filePath, e.getMessage(), e);
             throw new IOException("File not found: " + filePath, e);
         }
     }

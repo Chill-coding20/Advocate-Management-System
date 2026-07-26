@@ -270,22 +270,43 @@ public class DocumentService {
     }
 
     public Document getDocumentById(Long id, String email) {
-        Document doc = documentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Document not found"));
+        log.info("DOWNLOAD DEBUG — getDocumentById: id={}, requesterEmail={}", id, email);
+        Optional<Document> optDoc = documentRepository.findById(id);
+        if (optDoc.isEmpty()) {
+            log.error("DOWNLOAD DEBUG — Document NOT FOUND in database: id={}", id);
+            throw new RuntimeException("Document not found");
+        }
+        Document doc = optDoc.get();
+        log.info("DOWNLOAD DEBUG — Document FOUND: id={}, storedName={}, filePath={}, ownerEmail={}, originalName={}",
+                doc.getId(), doc.getStoredName(), doc.getFilePath(), doc.getAdvocate().getEmail(), doc.getOriginalName());
         if (!doc.getAdvocate().getEmail().equals(email)) {
+            log.error("DOWNLOAD DEBUG — Unauthorized access: document owner={}, requester={}",
+                    doc.getAdvocate().getEmail(), email);
             throw new RuntimeException("Unauthorized to access this document");
         }
+        log.info("DOWNLOAD DEBUG — Ownership verified: docId={} belongs to advocate={}", id, email);
         return doc;
     }
 
     public Resource getDocumentResource(Long id, String email) throws IOException {
+        log.info("DOWNLOAD DEBUG — getDocumentResource: id={}, email={}", id, email);
         Document doc = getDocumentById(id, email);
+        log.info("DOWNLOAD DEBUG — getDocumentResource: currentDownloadCount={}, filePath={}",
+                doc.getDownloadCount(), doc.getFilePath());
 
         // Increment download count
         doc.setDownloadCount(doc.getDownloadCount() + 1);
-        documentRepository.save(doc);
+        Document saved = documentRepository.save(doc);
+        log.info("DOWNLOAD DEBUG — Download count incremented to: {}", saved.getDownloadCount());
 
-        return storageService.loadAsResource(doc.getFilePath());
+        try {
+            Resource resource = storageService.loadAsResource(doc.getFilePath());
+            log.info("DOWNLOAD DEBUG — Storage resource loaded successfully");
+            return resource;
+        } catch (IOException e) {
+            log.error("DOWNLOAD DEBUG — Storage loadAsResource threw IOException: message={}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     public Resource getDocumentResourceForPreview(Long id, String email) throws IOException {

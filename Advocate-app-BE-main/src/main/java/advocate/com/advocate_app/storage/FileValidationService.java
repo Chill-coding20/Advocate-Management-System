@@ -23,22 +23,53 @@ public class FileValidationService {
     }
 
     public FileType validate(MultipartFile file) throws IOException {
+        log.info("UPLOAD DEBUG — FileValidation START: file={}, contentType={}, size={}",
+                file != null ? file.getOriginalFilename() : "null",
+                file != null ? file.getContentType() : "null",
+                file != null ? file.getSize() : -1);
+
         if (file == null || file.isEmpty()) {
-            log.warn("REJECTED: empty or null file upload attempt");
+            log.warn("UPLOAD DEBUG — REJECTED at STEP 1 (empty/null): file==null={}, isEmpty={}",
+                    file == null, file != null && file.isEmpty());
             throw new FileValidationException("Uploaded file is empty.");
         }
+        log.info("UPLOAD DEBUG — STEP 1 PASS: file is not empty");
 
         String originalName = file.getOriginalFilename();
         if (originalName == null || originalName.isBlank()) {
-            log.warn("REJECTED: file with no name");
+            log.warn("UPLOAD DEBUG — REJECTED at STEP 2 (no name)");
             throw new FileValidationException("File must have a valid name.");
         }
+        log.info("UPLOAD DEBUG — STEP 2 PASS: originalName='{}'", originalName);
 
-        validateFilename(originalName);
-        FileType fileType = FileTypeValidator.validate(file);
-        validateFileSize(file, fileType);
+        try {
+            validateFilename(originalName);
+            log.info("UPLOAD DEBUG — STEP 3 PASS: filename validated (no traversal/invalid chars)");
+        } catch (FileValidationException e) {
+            log.warn("UPLOAD DEBUG — REJECTED at STEP 3 (filename): {}", e.getMessage());
+            throw e;
+        }
 
-        log.info("ACCEPTED: file={}, type={}, size={} bytes, mime={}",
+        FileType fileType;
+        try {
+            fileType = FileTypeValidator.validate(file);
+            log.info("UPLOAD DEBUG — STEP 4 PASS: detectedType={}, extension={}, mime={}",
+                    fileType.getExtension(), fileType.getExtension(), fileType.getMimeType());
+        } catch (FileValidationException e) {
+            log.warn("UPLOAD DEBUG — REJECTED at STEP 4 (type validation): {}", e.getMessage());
+            throw e;
+        }
+
+        try {
+            validateFileSize(file, fileType);
+            log.info("UPLOAD DEBUG — STEP 5 PASS: fileSize={} within limit of {}MB",
+                    file.getSize(), fileType.getMaxSize() / (1024 * 1024));
+        } catch (FileValidationException e) {
+            log.warn("UPLOAD DEBUG — REJECTED at STEP 5 (file size): {}", e.getMessage());
+            throw e;
+        }
+
+        log.info("UPLOAD DEBUG — ALL STEPS PASSED: file={}, type={}, size={} bytes, mime={}",
                 originalName, fileType.getExtension(), file.getSize(), file.getContentType());
         return fileType;
     }
