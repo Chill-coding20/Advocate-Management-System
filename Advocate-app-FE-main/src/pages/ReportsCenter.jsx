@@ -11,6 +11,8 @@ import {
 import { useLoading } from "../contexts/LoadingContext";
 import { formatCurrency } from "../utils/formatCurrency";
 import ReportService from "../services/ReportService";
+import { useDownload } from "../hooks/useDownload";
+import DownloadLoader from "../components/DownloadLoader";
 import "../assets/styles/ReportsCenter.css";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE || "http://localhost:8080"}/api/reports-center`;
@@ -67,6 +69,7 @@ function ExportBtn({ label, onClick, icon }) {
 
 export default function ReportsCenter() {
   const { withLoading } = useLoading();
+  const { isDownloading, withDownload } = useDownload();
   const [filter, setFilter] = useState("this-month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
@@ -104,12 +107,12 @@ export default function ReportsCenter() {
   }, [customStart, customEnd, filter, fetchData]);
 
   const handleExportCsv = async (section) => {
-    const token = localStorage.getItem("token");
-    let url = `${API_BASE}/export/csv?section=${section}&filter=${filter}`;
-    if (filter === "custom" && customStart && customEnd) {
-      url += `&startDate=${customStart}&endDate=${customEnd}`;
-    }
-    try {
+    await withDownload(async () => {
+      const token = localStorage.getItem("token");
+      let url = `${API_BASE}/export/csv?section=${section}&filter=${filter}`;
+      if (filter === "custom" && customStart && customEnd) {
+        url += `&startDate=${customStart}&endDate=${customEnd}`;
+      }
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -123,13 +126,14 @@ export default function ReportsCenter() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(objectUrl);
-    } catch (err) {
-      console.error("CSV export error:", err);
-    }
+    }, "Exporting CSV...");
   };
 
-  const handleExportPdf = () => {
-    ReportService.downloadDashboard();
+  const handleExportPdf = async () => {
+    await withDownload(
+      ReportService.downloadDashboard(),
+      "Exporting PDF..."
+    );
   };
 
   const fin = data?.financial;
@@ -146,6 +150,7 @@ export default function ReportsCenter() {
 
   return (
     <div className="reports-center">
+      {isDownloading && <DownloadLoader message="Exporting..." />}
       <div className="rc-header">
         <div>
           <h1 className="rc-page-title">Reports & Analytics</h1>

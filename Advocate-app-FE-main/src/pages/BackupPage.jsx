@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { FiDownload, FiUpload, FiTrash2, FiRefreshCw, FiCheckCircle, FiXCircle, FiClock, FiAlertCircle, FiDatabase, FiFileText, FiSettings, FiFolder, FiZap, FiChevronDown, FiChevronRight, FiHeart } from "react-icons/fi";
 import { useLoading } from "../contexts/LoadingContext";
+import { useDownload } from "../hooks/useDownload";
+import DownloadLoader from "../components/DownloadLoader";
 import "../assets/styles/BackupPage.css";
 
 const API = `${import.meta.env.VITE_API_BASE || "http://localhost:8080"}/api/backup`;
@@ -27,6 +29,7 @@ const SECTION_ICONS = {
 
 function BackupPage() {
   const { withLoading } = useLoading();
+  const { isDownloading, withDownload } = useDownload();
   const token = localStorage.getItem("token");
   const authHeaders = { Authorization: `Bearer ${token}` };
 
@@ -173,28 +176,30 @@ function BackupPage() {
   };
 
   const downloadBackup = async (id) => {
-    try {
-      const res = await axios.get(`${API}/download/${id}`, {
-        headers: authHeaders,
-        responseType: "blob",
-      });
-      const disposition = res.headers["content-disposition"];
-      let filename = `backup_${id}.zip`;
-      if (disposition) {
-        const match = disposition.match(/filename="?(.+?)"?$/);
-        if (match) filename = match[1];
+    await withDownload(async () => {
+      try {
+        const res = await axios.get(`${API}/download/${id}`, {
+          headers: authHeaders,
+          responseType: "blob",
+        });
+        const disposition = res.headers["content-disposition"];
+        let filename = `backup_${id}.zip`;
+        if (disposition) {
+          const match = disposition.match(/filename="?(.+?)"?$/);
+          if (match) filename = match[1];
+        }
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        setStatusMsg({ type: "error", text: "Download failed" });
       }
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setStatusMsg({ type: "error", text: "Download failed" });
-    }
+    }, "Downloading Backup...");
   };
 
   const requestDelete = (id) => {
@@ -263,6 +268,7 @@ function BackupPage() {
 
   return (
     <div className="backup-page">
+      {isDownloading && <DownloadLoader message="Downloading Backup..." />}
       <h2>Backup &amp; Restore</h2>
 
       {statusMsg.text && (

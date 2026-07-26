@@ -4,6 +4,8 @@ import { useLoading } from "../contexts/LoadingContext";
 import { useToast } from "../contexts/ToastContext";
 import { FiSearch, FiX, FiDownload, FiClock, FiUser, FiGlobe, FiMonitor, FiSmartphone, FiServer, FiCalendar, FiActivity } from "react-icons/fi";
 import Pagination from "../components/Pagination";
+import { useDownload } from "../hooks/useDownload";
+import DownloadLoader from "../components/DownloadLoader";
 import "../assets/styles/SystemActivity.css";
 
 const API = `${import.meta.env.VITE_API_BASE || "http://localhost:8080"}/api/audit`;
@@ -147,6 +149,7 @@ export default function SystemActivity() {
   const [size] = useState(25);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const { isDownloading, withDownload } = useDownload();
 
   const fetchData = useCallback(async (p = page) => {
     setLoading(true);
@@ -226,135 +229,142 @@ export default function SystemActivity() {
   };
 
   const exportCSV = async () => {
-    setExporting(true);
-    try {
-      const items = await fetchAllForExport();
-      const headers = ["Timestamp", "User", "Action Type", "Module", "Title", "Description", "Status", "IP Address", "Browser", "OS", "Method", "URI"];
-      const rows = items.map(i => [
-        formatDateTime(i.createdAt),
-        i.userName || "",
-        i.actionType || "",
-        i.module || "",
-        (i.title || "").replace(/,/g, ";"),
-        (i.description || "").replace(/,/g, ";"),
-        i.status || "",
-        i.ipAddress || "",
-        i.browser || "",
-        i.operatingSystem || "",
-        i.requestMethod || "",
-        i.requestUri || "",
-      ]);
-      const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "SystemActivity.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("CSV exported successfully");
-    } catch (err) {
-      toast.error("Failed to export CSV");
-    } finally {
-      setExporting(false);
-    }
+    await withDownload(async () => {
+      setExporting(true);
+      try {
+        const items = await fetchAllForExport();
+        const headers = ["Timestamp", "User", "Action Type", "Module", "Title", "Description", "Status", "IP Address", "Browser", "OS", "Method", "URI"];
+        const rows = items.map(i => [
+          formatDateTime(i.createdAt),
+          i.userName || "",
+          i.actionType || "",
+          i.module || "",
+          (i.title || "").replace(/,/g, ";"),
+          (i.description || "").replace(/,/g, ";"),
+          i.status || "",
+          i.ipAddress || "",
+          i.browser || "",
+          i.operatingSystem || "",
+          i.requestMethod || "",
+          i.requestUri || "",
+        ]);
+        const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "SystemActivity.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("CSV exported successfully");
+      } catch (err) {
+        toast.error("Failed to export CSV");
+      } finally {
+        setExporting(false);
+      }
+    }, "Exporting CSV...");
   };
 
   const exportExcel = async () => {
-    setExporting(true);
-    try {
-      const items = await fetchAllForExport();
-      let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>';
-      html += "<tr><th>Timestamp</th><th>User</th><th>Action Type</th><th>Module</th><th>Title</th><th>Description</th><th>Status</th><th>IP</th><th>Browser</th><th>OS</th><th>Method</th><th>URI</th></tr>";
-      items.forEach(i => {
-        html += `<tr><td>${formatDateTime(i.createdAt)}</td><td>${i.userName || ""}</td><td>${i.actionType || ""}</td><td>${i.module || ""}</td><td>${(i.title || "").replace(/</g, "&lt;")}</td><td>${(i.description || "").replace(/</g, "&lt;")}</td><td>${i.status || ""}</td><td>${i.ipAddress || ""}</td><td>${i.browser || ""}</td><td>${i.operatingSystem || ""}</td><td>${i.requestMethod || ""}</td><td>${i.requestUri || ""}</td></tr>`;
-      });
-      html += "</table></body></html>";
-      const blob = new Blob([html], { type: "application/vnd.ms-excel" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "SystemActivity.xls";
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Excel exported successfully");
-    } catch (err) {
-      toast.error("Failed to export Excel");
-    } finally {
-      setExporting(false);
-    }
+    await withDownload(async () => {
+      setExporting(true);
+      try {
+        const items = await fetchAllForExport();
+        let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>';
+        html += "<tr><th>Timestamp</th><th>User</th><th>Action Type</th><th>Module</th><th>Title</th><th>Description</th><th>Status</th><th>IP</th><th>Browser</th><th>OS</th><th>Method</th><th>URI</th></tr>";
+        items.forEach(i => {
+          html += `<tr><td>${formatDateTime(i.createdAt)}</td><td>${i.userName || ""}</td><td>${i.actionType || ""}</td><td>${i.module || ""}</td><td>${(i.title || "").replace(/</g, "&lt;")}</td><td>${(i.description || "").replace(/</g, "&lt;")}</td><td>${i.status || ""}</td><td>${i.ipAddress || ""}</td><td>${i.browser || ""}</td><td>${i.operatingSystem || ""}</td><td>${i.requestMethod || ""}</td><td>${i.requestUri || ""}</td></tr>`;
+        });
+        html += "</table></body></html>";
+        const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "SystemActivity.xls";
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Excel exported successfully");
+      } catch (err) {
+        toast.error("Failed to export Excel");
+      } finally {
+        setExporting(false);
+      }
+    }, "Exporting Excel...");
   };
 
   const exportPDF = async () => {
-    setExporting(true);
-    try {
-      const items = await fetchAllForExport();
-      const { jsPDF } = await import("jspdf");
-      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      let y = 15;
+    await withDownload(async () => {
+      setExporting(true);
+      try {
+        const items = await fetchAllForExport();
+        const { jsPDF } = await import("jspdf");
+        const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        let y = 15;
 
-      doc.setFontSize(16);
-      doc.text("System Activity Report", pageWidth / 2, y, { align: "center" });
-      y += 10;
+        doc.setFontSize(16);
+        doc.text("System Activity Report", pageWidth / 2, y, { align: "center" });
+        y += 10;
 
-      doc.setFontSize(9);
-      doc.text(`Generated: ${new Date().toLocaleString()} | Records: ${items.length}`, pageWidth / 2, y, { align: "center" });
-      y += 8;
+        doc.setFontSize(9);
+        doc.text(`Generated: ${new Date().toLocaleString()} | Records: ${items.length}`, pageWidth / 2, y, { align: "center" });
+        y += 8;
 
-      if (search) { doc.text(`Search: ${search}`, 14, y); y += 6; }
-      if (module) { doc.text(`Module: ${module}`, 14, y); y += 6; }
-      if (actionType) { doc.text(`Action: ${actionType}`, 14, y); y += 6; }
-      if (status) { doc.text(`Status: ${status}`, 14, y); y += 6; }
-      y += 4;
+        if (search) { doc.text(`Search: ${search}`, 14, y); y += 6; }
+        if (module) { doc.text(`Module: ${module}`, 14, y); y += 6; }
+        if (actionType) { doc.text(`Action: ${actionType}`, 14, y); y += 6; }
+        if (status) { doc.text(`Status: ${status}`, 14, y); y += 6; }
+        y += 4;
 
-      const cols = ["Timestamp", "User", "Action", "Module", "Title", "Status"];
-      const colWidths = [35, 30, 35, 30, 60, 20];
-      const startX = 14;
+        const cols = ["Timestamp", "User", "Action", "Module", "Title", "Status"];
+        const colWidths = [35, 30, 35, 30, 60, 20];
+        const startX = 14;
 
-      const drawRow = (cells, isHeader) => {
-        let x = startX;
-        doc.setFontSize(isHeader ? 8 : 7);
-        doc.setFont(undefined, isHeader ? "bold" : "normal");
-        cells.forEach((cell, i) => {
-          doc.text(String(cell).substring(0, Math.floor(colWidths[i] / 1.5)), x + 1, y + 4);
-          doc.rect(x, y, colWidths[i], 7);
-          x += colWidths[i];
+        const drawRow = (cells, isHeader) => {
+          let x = startX;
+          doc.setFontSize(isHeader ? 8 : 7);
+          doc.setFont(undefined, isHeader ? "bold" : "normal");
+          cells.forEach((cell, i) => {
+            doc.text(String(cell).substring(0, Math.floor(colWidths[i] / 1.5)), x + 1, y + 4);
+            doc.rect(x, y, colWidths[i], 7);
+            x += colWidths[i];
+          });
+          y += 7;
+        };
+
+        doc.setFillColor(240, 240, 240);
+        drawRow(cols, true);
+
+        items.forEach((item, idx) => {
+          if (y > 185) {
+            doc.addPage();
+            y = 15;
+            doc.setFillColor(240, 240, 240);
+            drawRow(cols, true);
+          }
+          drawRow([
+            formatDateTime(item.createdAt),
+            item.userName || "",
+            item.actionType || "",
+            item.module || "",
+            item.title || "",
+            item.status || "",
+          ], false);
         });
-        y += 7;
-      };
 
-      doc.setFillColor(240, 240, 240);
-      drawRow(cols, true);
-
-      items.forEach((item, idx) => {
-        if (y > 185) {
-          doc.addPage();
-          y = 15;
-          doc.setFillColor(240, 240, 240);
-          drawRow(cols, true);
-        }
-        drawRow([
-          formatDateTime(item.createdAt),
-          item.userName || "",
-          item.actionType || "",
-          item.module || "",
-          item.title || "",
-          item.status || "",
-        ], false);
-      });
-
-      doc.save("SystemActivity.pdf");
-      toast.success("PDF exported successfully");
-    } catch (err) {
-      toast.error("Failed to export PDF");
-    } finally {
-      setExporting(false);
-    }
+        doc.save("SystemActivity.pdf");
+        toast.success("PDF exported successfully");
+      } catch (err) {
+        toast.error("Failed to export PDF");
+      } finally {
+        setExporting(false);
+      }
+    }, "Exporting PDF...");
   };
 
   return (
     <div className="system-activity-container">
+      {isDownloading && <DownloadLoader message="Exporting..." />}
       <div className="sa-header">
         <h2><FiActivity /> System Activity</h2>
         <span className="sa-total">{data.totalElements} records</span>
