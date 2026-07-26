@@ -167,7 +167,7 @@ public class DemoWorkspaceService {
         List<CaseEntity> cases = new ArrayList<>();
         for (int i = 0; i < caseCount; i++) {
             CaseEntity ce = new CaseEntity();
-            ce.setCaseNumber("DEMO/" + (10000 + i) + "/" + (2024 + RANDOM.nextInt(3)));
+            ce.setCaseNumber("DEMO-" + advocate.getId() + "-" + (10000 + i));
             ce.setCaseTitle(randomCaseType() + " - " + randomName());
             ce.setCaseType(randomCaseType());
             ce.setCourtLevel(COURT_LEVELS[RANDOM.nextInt(COURT_LEVELS.length)]);
@@ -336,7 +336,7 @@ public class DemoWorkspaceService {
             double amount = 10000.0 + RANDOM.nextDouble() * 290000.0;
             String invStatus = INVOICE_STATUSES[RANDOM.nextInt(INVOICE_STATUSES.length)];
             Invoice inv = new Invoice();
-            inv.setInvoiceNumber("INV-DEMO-" + (1000 + i));
+            inv.setInvoiceNumber("INV-DEMO-" + advocate.getId() + "-" + (1000 + i));
             inv.setAmount(amount);
             inv.setInvoiceDate(LocalDate.now().minusDays(RANDOM.nextInt(90)));
             inv.setDueDate(inv.getInvoiceDate().plusDays(30));
@@ -352,7 +352,7 @@ public class DemoWorkspaceService {
                 timelineService.recordEvent(
                         c.getId(), c.getClient() != null ? c.getClient().getId() : null,
                         advocate.getId(), CaseTimelineService.INVOICE_GENERATED,
-                        "Invoice Generated", "INV-DEMO-" + (1000 + i) + " - " + String.format("%.0f", amount),
+                        "Invoice Generated", "INV-DEMO-" + advocate.getId() + "-" + (1000 + i) + " - " + String.format("%.0f", amount),
                         "System (Demo)", "Invoice", saved.getId()
                 );
             } catch (Exception e) {
