@@ -1,3 +1,5 @@
+import DownloadManager from "../utils/DownloadManager";
+
 const API_BASE = `${import.meta.env.VITE_API_BASE || "http://localhost:8080"}/api/reports`;
 
 function getToken() {
@@ -9,17 +11,22 @@ function authHeaders() {
 }
 
 async function downloadPdf(url, filename) {
-  const res = await fetch(url, { headers: authHeaders() });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = objectUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(objectUrl);
+  DownloadManager.show("Downloading...");
+  try {
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  } finally {
+    DownloadManager.hide();
+  }
 }
 
 async function openPdfInTab(url) {

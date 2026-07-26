@@ -18,6 +18,8 @@ import './assets/styles/animations.css'
 import './assets/styles/Panel.css'
 import './assets/styles/NotificationsCenter.css'
 import './assets/styles/GlobalLoader.css'
+import './assets/styles/DownloadLoader.css'
+import DownloadLoader from './components/DownloadLoader.jsx'
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
@@ -26,6 +28,7 @@ createRoot(document.getElementById('root')).render(
       <LoadingProvider>
         <ToastProvider>
           <GlobalLoader />
+          <DownloadLoader />
           <GlobalToast />
           <App />
         </ToastProvider>
